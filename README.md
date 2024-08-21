@@ -1,0 +1,1 @@
+# blinkmart-protocol
