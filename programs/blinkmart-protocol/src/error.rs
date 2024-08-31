@@ -2,6 +2,10 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Custom error message")]
-    CustomError,
+    #[msg("Invalid order id")]
+    InvalidOrderId,
+    #[msg("Invalid product id")]
+    InvalidProductId,
+    #[msg("Invalid treasury address")]
+    InvalidTreasury,
 }
