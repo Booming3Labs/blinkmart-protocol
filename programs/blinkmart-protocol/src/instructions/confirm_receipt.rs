@@ -4,7 +4,9 @@ use crate::{Admin, Order, Product, ADMIN, ORDER, PRODUCT};
 use anchor_lang::prelude::*;
 
 pub fn confirm_receipt(ctx: Context<ConfirmReceipt>, _params: ConfirmReceiptParams) -> Result<()> {
-    require!(ctx.accounts.order.bump.ne(&0), ErrorCode::InvalidOrderId);
+    require!(ctx.accounts.order.bump.ne(&0), ErrorCode::InvalidOrder);
+
+    ctx.accounts.product.sales_amount += ctx.accounts.order.amount;
 
     Ok(())
 }

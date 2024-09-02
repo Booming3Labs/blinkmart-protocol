@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 #[account]
 #[derive(InitSpace)]
 pub struct Order {
-    #[max_len(20)]
+    #[max_len(40)]
     pub order_id: String,
     pub payer: Pubkey,
     pub amount: u64,

@@ -2,7 +2,6 @@ use crate::error::ErrorCode;
 use anchor_lang::prelude::*;
 
 use crate::{Admin, Product, ADMIN, PRODUCT};
-use anchor_lang::system_program;
 
 pub fn delisting(ctx: Context<Delisting>, _params: DelistingParams) -> Result<()> {
     let mut withdraw_amount = ctx.accounts.product.sales_amount;
@@ -15,16 +14,16 @@ pub fn delisting(ctx: Context<Delisting>, _params: DelistingParams) -> Result<()
             .checked_div(10000)
             .unwrap();
 
-        system_program::transfer(
-            CpiContext::new(
-                ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: ctx.accounts.admin.to_account_info(),
-                    to: ctx.accounts.treasury.to_account_info(),
-                },
-            ),
-            withdraw_amount,
-        )?;
+        **ctx
+            .accounts
+            .admin
+            .to_account_info()
+            .try_borrow_mut_lamports()? -= withdraw_amount;
+        **ctx
+            .accounts
+            .treasury
+            .to_account_info()
+            .try_borrow_mut_lamports()? += withdraw_amount;
     }
     Ok(())
 }

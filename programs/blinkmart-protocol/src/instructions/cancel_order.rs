@@ -1,25 +1,23 @@
 use anchor_lang::prelude::*;
 
-use anchor_lang::system_program;
-
 use crate::error::ErrorCode;
 use crate::{Admin, Order, Product, ADMIN, ORDER, PRODUCT};
 
 pub fn cancel_order(ctx: Context<CancelOrder>, _params: CancelOrderParams) -> Result<()> {
-    require!(ctx.accounts.order.bump.ne(&0), ErrorCode::InvalidOrderId);
+    require!(ctx.accounts.order.bump.ne(&0), ErrorCode::InvalidOrder);
 
-    let amount = ctx.accounts.order.amount;
+    let order_amount = ctx.accounts.order.amount;
 
-    system_program::transfer(
-        CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
-            system_program::Transfer {
-                from: ctx.accounts.admin.to_account_info(),
-                to: ctx.accounts.payer.to_account_info(),
-            },
-        ),
-        amount,
-    )?;
+    **ctx
+        .accounts
+        .admin
+        .to_account_info()
+        .try_borrow_mut_lamports()? -= order_amount;
+    **ctx
+        .accounts
+        .payer
+        .to_account_info()
+        .try_borrow_mut_lamports()? += order_amount;
 
     Ok(())
 }
@@ -33,7 +31,7 @@ pub struct CancelOrderParams {
 #[derive(Accounts)]
 #[instruction(params: CancelOrderParams)]
 pub struct CancelOrder<'info> {
-    #[account(mut)]
+    #[account(mut, address = order.payer)]
     pub payer: Signer<'info>,
 
     #[account(
@@ -52,6 +50,7 @@ pub struct CancelOrder<'info> {
 			ORDER.as_bytes(),
             params.order_id.as_bytes()
 		],
+        close=payer,
         bump
     )]
     pub order: Box<Account<'info, Order>>,

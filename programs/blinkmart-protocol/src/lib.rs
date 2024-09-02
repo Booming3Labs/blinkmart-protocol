@@ -12,11 +12,11 @@ pub use state::*;
 declare_id!("GSa7icw4GkCW5Lnqdz53BVhX3V9tx8MPY7XZxR8BAixS");
 
 #[program]
-pub mod blinkmart_protocol {
+pub mod blinkmart_protocol {   
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        instructions::initialize(ctx)
+    pub fn initialize(ctx: Context<Initialize>, params: InitializeParams) -> Result<()> {
+        instructions::initialize(ctx, params)
     }
 
     pub fn listing(ctx: Context<Listing>, params: ListingParams) -> Result<()> {

@@ -1,36 +1,38 @@
 use anchor_lang::prelude::*;
 
 use crate::error::ErrorCode;
-use anchor_lang::system_program;
 
 use crate::{Admin, Product, ADMIN, PRODUCT};
 
 pub fn seller_withdraw(ctx: Context<SellerWithdraw>, _params: SellerWithdrawParams) -> Result<()> {
-    require!(
-        ctx.accounts.product.bump.ne(&0),
-        ErrorCode::InvalidProductId
-    );
+    require!(ctx.accounts.product.bump.ne(&0), ErrorCode::InvalidProduct);
 
-    let transaction_fee = ctx.accounts.admin.transaction_fees; // 500 -> 5%
+    // let transaction_fee = ctx.accounts.admin.transaction_fees; // 500 -> 5%
+    let transaction_fee = ctx
+        .accounts
+        .product
+        .sales_amount
+        .checked_mul(ctx.accounts.admin.transaction_fees as u64)
+        .unwrap()
+        .checked_div(10000)
+        .unwrap();
     let withdraw_amount = ctx
         .accounts
         .product
         .sales_amount
-        .checked_mul(transaction_fee as u64)
-        .unwrap()
-        .checked_div(10000)
+        .checked_sub(transaction_fee)
         .unwrap();
 
-    system_program::transfer(
-        CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
-            system_program::Transfer {
-                from: ctx.accounts.admin.to_account_info(),
-                to: ctx.accounts.treasury.to_account_info(),
-            },
-        ),
-        withdraw_amount,
-    )?;
+    **ctx
+        .accounts
+        .admin
+        .to_account_info()
+        .try_borrow_mut_lamports()? -= withdraw_amount;
+    **ctx
+        .accounts
+        .treasury
+        .to_account_info()
+        .try_borrow_mut_lamports()? += withdraw_amount;
 
     Ok(())
 }
@@ -43,9 +45,6 @@ pub struct SellerWithdrawParams {
 #[derive(Accounts)]
 #[instruction(params: SellerWithdrawParams)]
 pub struct SellerWithdraw<'info> {
-    #[account(mut, address = product.administrator)]
-    pub administrator: Signer<'info>,
-
     /// CHECK:
     #[account(mut, address = product.treasury @ ErrorCode::InvalidTreasury)]
     pub treasury: UncheckedAccount<'info>,
@@ -68,6 +67,9 @@ pub struct SellerWithdraw<'info> {
         bump
     )]
     pub admin: Box<Account<'info, Admin>>,
+
+    #[account(mut, address = product.administrator)]
+    pub administrator: Signer<'info>,
 
     pub system_program: Program<'info, System>,
 }

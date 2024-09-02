@@ -6,6 +6,7 @@ pub fn listing(ctx: Context<Listing>, params: ListingParams) -> Result<()> {
     ctx.accounts.product.set_inner(Product {
         product_id: params.product_id,
         administrator: params.administrator,
+        // administrator: ctx.accounts.authority.key(),
         treasury: params.treasury,
         sales_price: params.sales_price,
         // inventory: params.inventory,
@@ -21,22 +22,23 @@ pub struct ListingParams {
     administrator: Pubkey,
     treasury: Pubkey,
     sales_price: u64,
-    inventory: u64,
+    // inventory: u64,
 }
 
 #[derive(Accounts)]
 #[instruction(params: ListingParams)]
 pub struct Listing<'info> {
     #[account(mut)]
-    pub administrator: Signer<'info>,
+    pub authority: Signer<'info>,
 
     #[account(
         init,
         space= Product::LEN,
-        payer = administrator,
+        payer = authority,
         seeds=[
 			PRODUCT.as_bytes(),
             params.product_id.as_bytes(),
+            // &hash::hash(params.product_id.as_bytes()).to_bytes()
 		],
         bump
     )]

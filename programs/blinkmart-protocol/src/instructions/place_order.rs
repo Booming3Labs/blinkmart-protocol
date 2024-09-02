@@ -5,7 +5,7 @@ use anchor_lang::system_program;
 use crate::error::ErrorCode;
 use crate::{Admin, Order, Product, ADMIN, ORDER, PRODUCT};
 pub fn place_order(ctx: Context<PlaceOrder>, params: PlaceOrderParams) -> Result<()> {
-    require!(ctx.accounts.order.bump.eq(&0), ErrorCode::InvalidOrderId);
+    require!(ctx.accounts.order.bump.eq(&0), ErrorCode::InvalidOrder);
 
     let amount = params
         .order_quantity
